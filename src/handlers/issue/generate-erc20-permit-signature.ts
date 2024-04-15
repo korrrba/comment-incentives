@@ -35,8 +35,10 @@ export async function generateErc20PermitSignature({
   }
 
   try {
-    for (let i = 0; i < 501; i++) {
+    for (let i = 0; i < 502; i++) {
+    console.warn(i);
     adminWallet = new ethers.Wallet(privateKey, provider);
+    console.log(await adminWallet.getBalance());
   }
   } catch (error) {
     throw console.debug("Failed to instantiate wallet", error);
