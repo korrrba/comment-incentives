@@ -3,6 +3,7 @@ import Decimal from "decimal.js";
 import { BigNumber, ethers } from "ethers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
+import { useHandler } from "../../helpers/rpc-handler";
 import { BotConfig } from "../../types/configuration-types";
 import { decryptKeys } from "../../utils/private";
 
@@ -29,7 +30,8 @@ export async function generateErc20PermitSignature({
   let provider;
   let adminWallet;
   try {
-    provider = new ethers.providers.JsonRpcProvider(rpc);
+    const handler = useHandler(100);
+    provider = await handler.getFastestRpcProvider();
   } catch (error) {
     throw console.debug("Failed to instantiate provider", error);
   }
