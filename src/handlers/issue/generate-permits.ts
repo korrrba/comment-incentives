@@ -30,7 +30,7 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
     features: { isNftRewardEnabled },
     payments: { evmNetworkId },
   } = config;
-  const { rpc, paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
+  const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
 
   const tokenSymbol = await getTokenSymbol(paymentToken, rpc);
   const htmlArray = [] as string[];

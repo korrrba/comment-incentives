@@ -1,6 +1,7 @@
 import { MaxUint256, PERMIT2_ADDRESS, PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import Decimal from "decimal.js";
 import { BigNumber, ethers } from "ethers";
+import { JsonRpcProvider } from "@ethersproject/providers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
 import { useHandler } from "../../helpers/rpc-handler";
@@ -20,25 +21,23 @@ export async function generateErc20PermitSignature({
   } = config;
 
   if (!evmPrivateEncrypted) throw console.warn("No bot wallet private key defined");
-  const { rpc, paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
+  const { paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
   const { privateKey } = await decryptKeys(evmPrivateEncrypted);
 
-  if (!rpc) throw console.error("RPC is not defined");
+  const rpcHandler = useHandler(evmNetworkId);
+  let provider: JsonRpcProvider = await rpcHandler.getFastestRpcProvider();
+
   if (!privateKey) throw console.error("Private key is not defined");
   if (!paymentToken) throw console.error("Payment token is not defined");
 
-  let provider;
   let adminWallet;
-  try {
-    const handler = useHandler(100);
-    provider = await handler.getFastestRpcProvider();
-  } catch (error) {
-    throw console.debug("Failed to instantiate provider", error);
-  }
 
   try {
     for (let i = 0; i < 502; i++) {
-    console.warn(i);
+    console.debug(i);
+    const latencies = rpcHandler.getLatencies();
+
+    console.log(latencies);
     adminWallet = new ethers.Wallet(privateKey, provider);
     console.log(await adminWallet.getBalance());
   }
