@@ -3,6 +3,8 @@ import { stringify } from "yaml";
 
 import { getTokenSymbol } from "../../helpers/contracts";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
+import { useHandler } from "../../helpers/rpc-handler";
+import { JsonRpcProvider } from "@ethersproject/providers";
 import structuredMetadata from "../../shared/structured-metadata";
 import { GitHubIssue } from "../../types/payload";
 import { generateErc20PermitSignature } from "./generate-erc20-permit-signature";
@@ -32,7 +34,10 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
   } = config;
   const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
 
-  const tokenSymbol = await getTokenSymbol(paymentToken, rpc);
+  const rpcHandler = useHandler(evmNetworkId);
+  const provider: JsonRpcProvider = await rpcHandler.getFastestRpcProvider();
+
+  const tokenSymbol = await getTokenSymbol(paymentToken, provider);
   const htmlArray = [] as string[];
 
   const allTxs = [];
