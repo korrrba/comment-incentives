@@ -3,13 +3,15 @@ keys:
 
 features:
   assistivePricing: true
+  newContributorGreeting:
+    enabled: true
   publicAccessControl:
     setLabel: true
     fundExternalClosedIssue: true
 
 payments:
   evmNetworkId: 100
-  basePriceMultiplier: 1
+  basePriceMultiplier: 2
   issueCreatorMultiplier: 3
   maxPermitPrice: 1000
 
