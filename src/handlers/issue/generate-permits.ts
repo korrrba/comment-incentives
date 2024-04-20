@@ -2,6 +2,8 @@ import Decimal from "decimal.js";
 import { stringify } from "yaml";
 import { getTokenSymbol } from "../../helpers/contracts";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
+import pRetry from "p-retry";
+import delay from "delay";
 import { useHandler } from "../../helpers/rpc-handler";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import structuredMetadata from "../../shared/structured-metadata";
@@ -34,8 +36,14 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
   } = config;
   const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
 
-  const rpcHandler = useHandler(evmNetworkId);
-  const provider: JsonRpcProvider = await rpcHandler.getFastestRpcProvider();
+  const rpcHandler = useHandler(config.payments.evmNetworkId);
+  const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
+    onFailedAttempt: async error => {
+      console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
+      await delay(1000);
+    },
+    retries: 5
+  });
 
   const tokenSymbol = await getTokenSymbol(paymentToken, provider);
   const htmlArray = [] as string[];
