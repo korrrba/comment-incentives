@@ -1,5 +1,8 @@
 import { BigNumber, ethers, utils } from "ethers";
-import { getPayoutConfigByNetworkId } from "../../helpers/payout";
+import { useHandler } from "../../helpers/rpc-handler";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import pRetry from "p-retry";
+import delay from "delay";
 import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
 
@@ -71,16 +74,16 @@ export async function generateErc721PermitSignature({
   userId,
   contributionType,
 }: GenerateErc721PermitSignatureParams) {
-  const { rpc } = getPayoutConfigByNetworkId(networkId);
+  const rpcHandler = useHandler(networkId);
+  const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
+    onFailedAttempt: async error => {
+      console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
+      await delay(1000);
+    },
+    retries: 5
+  });
 
-  let provider;
   let adminWallet;
-  try {
-    provider = new ethers.providers.JsonRpcProvider(rpc);
-  } catch (error) {
-    throw console.error("Failed to instantiate provider", error);
-  }
-
   try {
     adminWallet = new ethers.Wallet(NFT_MINTER_PRIVATE_KEY, provider);
   } catch (error) {

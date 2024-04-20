@@ -1,6 +1,5 @@
 import Decimal from "decimal.js";
 import { stringify } from "yaml";
-
 import { getTokenSymbol } from "../../helpers/contracts";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
 import { useHandler } from "../../helpers/rpc-handler";
@@ -12,6 +11,7 @@ import { UserScoreTotals } from "./issue-shared-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { generateErc721PermitSignature } from "./generate-erc721-permit-signature";
 import { BotConfig } from "../../types/configuration-types";
+
 
 type TotalsById = { [userId: string]: UserScoreTotals };
 

@@ -1,5 +1,7 @@
 import { MaxUint256, PERMIT2_ADDRESS, PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import Decimal from "decimal.js";
+import pRetry from "p-retry";
+import delay from "delay";
 import { BigNumber, ethers } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
@@ -7,6 +9,7 @@ import { getPayoutConfigByNetworkId } from "../../helpers/payout";
 import { useHandler } from "../../helpers/rpc-handler";
 import { BotConfig } from "../../types/configuration-types";
 import { decryptKeys } from "../../utils/private";
+
 
 export async function generateErc20PermitSignature({
   beneficiary,
@@ -25,22 +28,24 @@ export async function generateErc20PermitSignature({
   const { privateKey } = await decryptKeys(evmPrivateEncrypted);
 
   const rpcHandler = useHandler(evmNetworkId);
-  let provider: JsonRpcProvider = await rpcHandler.getFastestRpcProvider();
+  const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
+    onFailedAttempt: async error => {
+      console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
+      await delay(1000);
+    },
+    retries: 5
+  });
 
   if (!privateKey) throw console.error("Private key is not defined");
   if (!paymentToken) throw console.error("Payment token is not defined");
 
   let adminWallet;
 
+  const latencies = await rpcHandler.getLatencies();
+  console.error(latencies);
+ 
   try {
-    for (let i = 0; i < 502; i++) {
-    console.debug(i);
-    const latencies = rpcHandler.getLatencies();
-
-    console.log(latencies);
     adminWallet = new ethers.Wallet(privateKey, provider);
-    console.log(await adminWallet.getBalance());
-  }
   } catch (error) {
     throw console.debug("Failed to instantiate wallet", error);
   }
