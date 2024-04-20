@@ -34,9 +34,9 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
     features: { isNftRewardEnabled },
     payments: { evmNetworkId },
   } = config;
-  const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
+  const { paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
 
-  const rpcHandler = useHandler(config.payments.evmNetworkId);
+  const rpcHandler = useHandler(evmNetworkId);
   const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
     onFailedAttempt: async error => {
       console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
