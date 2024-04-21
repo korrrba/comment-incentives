@@ -2,10 +2,7 @@ import Decimal from "decimal.js";
 import { stringify } from "yaml";
 import { getTokenSymbol } from "../../helpers/contracts";
 import { getPayoutConfigByNetworkId } from "../../helpers/payout";
-import pRetry from "p-retry";
-import delay from "delay";
 import { useHandler } from "../../helpers/rpc-handler";
-import { JsonRpcProvider } from "@ethersproject/providers";
 import structuredMetadata from "../../shared/structured-metadata";
 import { GitHubIssue } from "../../types/payload";
 import { generateErc20PermitSignature } from "./generate-erc20-permit-signature";
@@ -13,7 +10,7 @@ import { UserScoreTotals } from "./issue-shared-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { generateErc721PermitSignature } from "./generate-erc721-permit-signature";
 import { BotConfig } from "../../types/configuration-types";
-
+import { retryAsyncUntilDefinedDecorator } from "ts-retry";
 
 type TotalsById = { [userId: string]: UserScoreTotals };
 
@@ -37,14 +34,12 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
   const { paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
 
   const rpcHandler = useHandler(evmNetworkId);
-  const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
-    onFailedAttempt: async error => {
-      console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
-      await delay(1000);
-    },
-    retries: 5
-  });
+  const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
+    rpcHandler.getFastestRpcProvider,
+    { delay: 1000, maxTry: 5 }
+  );
 
+  const provider = await getFastestRpcProviderUntilDefined();
   const tokenSymbol = await getTokenSymbol(paymentToken, provider);
   const htmlArray = [] as string[];
 
@@ -299,3 +294,4 @@ interface GenerateHtmlParams {
   contributionsOverviewTable: string;
   detailsTable: string;
 }
+

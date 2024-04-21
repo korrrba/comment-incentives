@@ -1,10 +1,9 @@
 import { BigNumber, ethers, utils } from "ethers";
 import { useHandler } from "../../helpers/rpc-handler";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import pRetry from "p-retry";
-import delay from "delay";
 import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
+import { retryAsyncUntilDefinedDecorator } from "ts-retry";
 
 const NFT_MINTER_PRIVATE_KEY = process.env.NFT_MINTER_PRIVATE_KEY as string;
 const NFT_CONTRACT_ADDRESS = "0x6a87f05a74AB2EC25D1Eea0a3Cd24C3A2eCfF3E0";
@@ -75,13 +74,11 @@ export async function generateErc721PermitSignature({
   contributionType,
 }: GenerateErc721PermitSignatureParams) {
   const rpcHandler = useHandler(networkId);
-  const provider: JsonRpcProvider = await pRetry(rpcHandler.getFastestRpcProvider, {
-    onFailedAttempt: async error => {
-      console.log(`getFastestRpcProvider attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
-      await delay(1000);
-    },
-    retries: 5
-  });
+  const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
+    rpcHandler.getFastestRpcProvider,
+    { delay: 1000, maxTry: 5 }
+  );
+  const provider = await getFastestRpcProviderUntilDefined();
 
   let adminWallet;
   try {
