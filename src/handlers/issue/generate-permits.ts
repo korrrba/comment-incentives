@@ -10,7 +10,8 @@ import { UserScoreTotals } from "./issue-shared-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { generateErc721PermitSignature } from "./generate-erc721-permit-signature";
 import { BotConfig } from "../../types/configuration-types";
-import { retryAsyncUntilDefinedDecorator } from "ts-retry";
+import { retryAsyncUntilDefined } from "ts-retry";
+import { JsonRpcProvider } from "@ethersproject/providers";
 
 type TotalsById = { [userId: string]: UserScoreTotals };
 
@@ -33,13 +34,14 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
   } = config;
   const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
 
-  const rpcHandler = useHandler(config.payments.evmNetworkId);
-  const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
-    rpcHandler.getFastestRpcProvider,
+  
+  const provider = await retryAsyncUntilDefined<JsonRpcProvider>(
+    async () => {
+    const rpcHandler = useHandler(config.payments.evmNetworkId);
+    return await rpcHandler.getFastestRpcProvider()},
     { delay: 1000, maxTry: 5 }
   );
 
-  const provider = await getFastestRpcProviderUntilDefined();
   const tokenSymbol = await getTokenSymbol(paymentToken, provider);
   const htmlArray = [] as string[];
 

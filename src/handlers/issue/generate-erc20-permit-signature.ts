@@ -1,6 +1,6 @@
 import { MaxUint256, PERMIT2_ADDRESS, PermitTransferFrom, SignatureTransfer } from "@uniswap/permit2-sdk";
 import Decimal from "decimal.js";
-import { retryAsyncUntilDefinedDecorator } from "ts-retry";
+import { retryAsyncUntilDefined } from "ts-retry";
 import { BigNumber, ethers } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
@@ -26,12 +26,12 @@ export async function generateErc20PermitSignature({
   const { paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
   const { privateKey } = await decryptKeys(evmPrivateEncrypted);
 
-  const rpcHandler = useHandler(evmNetworkId);
-  const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
-    rpcHandler.getFastestRpcProvider,
+  const provider = await retryAsyncUntilDefined<JsonRpcProvider>(
+    async () => {
+    const rpcHandler = useHandler(config.payments.evmNetworkId);
+    return await rpcHandler.getFastestRpcProvider()},
     { delay: 1000, maxTry: 5 }
   );
-  const provider = await getFastestRpcProviderUntilDefined();
 
   if (!privateKey) throw console.error("Private key is not defined");
   if (!paymentToken) throw console.error("Payment token is not defined");

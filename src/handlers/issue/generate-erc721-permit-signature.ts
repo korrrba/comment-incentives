@@ -3,7 +3,7 @@ import { useHandler } from "../../helpers/rpc-handler";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { MaxUint256 } from "@uniswap/permit2-sdk";
 import { keccak256, toUtf8Bytes } from "ethers/lib/utils";
-import { retryAsyncUntilDefinedDecorator } from "ts-retry";
+import { retryAsyncUntilDefined } from "ts-retry";
 
 const NFT_MINTER_PRIVATE_KEY = process.env.NFT_MINTER_PRIVATE_KEY as string;
 const NFT_CONTRACT_ADDRESS = "0x6a87f05a74AB2EC25D1Eea0a3Cd24C3A2eCfF3E0";
@@ -73,12 +73,12 @@ export async function generateErc721PermitSignature({
   userId,
   contributionType,
 }: GenerateErc721PermitSignatureParams) {
-  const rpcHandler = useHandler(networkId);
-  const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
-    rpcHandler.getFastestRpcProvider,
+  const provider = await retryAsyncUntilDefined<JsonRpcProvider>(
+    async () => {
+    const rpcHandler = useHandler(networkId);
+    return await rpcHandler.getFastestRpcProvider()},
     { delay: 1000, maxTry: 5 }
   );
-  const provider = await getFastestRpcProviderUntilDefined();
 
   let adminWallet;
   try {
