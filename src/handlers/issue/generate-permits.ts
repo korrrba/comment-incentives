@@ -31,9 +31,9 @@ async function generateComment(totals: TotalsById, issue: GitHubIssue, config: B
     features: { isNftRewardEnabled },
     payments: { evmNetworkId },
   } = config;
-  const { paymentToken } = getPayoutConfigByNetworkId(evmNetworkId);
+  const { paymentToken } = getPayoutConfigByNetworkId(config.payments.evmNetworkId);
 
-  const rpcHandler = useHandler(evmNetworkId);
+  const rpcHandler = useHandler(config.payments.evmNetworkId);
   const getFastestRpcProviderUntilDefined = await retryAsyncUntilDefinedDecorator(
     rpcHandler.getFastestRpcProvider,
     { delay: 1000, maxTry: 5 }
